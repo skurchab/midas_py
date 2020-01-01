@@ -7,8 +7,10 @@ def mls(x: np.array, k_min: int, k_max: int,  m: int):
     """
     n_x = len(x)
     n = n_x // m
-    #print(n)
-    lk = np.arange(k_min, k_max) #???
+    if k_max==1:
+        lk = np.arange(k_min, k_max)
+    else:
+        lk = np.arange(k_min - 1, k_max)
     k = k_max + 1
     if k_min > 0:
         k_min = 0
@@ -19,19 +21,15 @@ def mls(x: np.array, k_min: int, k_max: int,  m: int):
     array = np.arange(k_min, k)
     X = []
     for i in array:
-        X.append(x[idx-array[i]])
-    #print(X)
+        X.append(x[(idx-1)-array[i]])
     X = np.array(X).T
-    #print(X)
-    #print(X.shape[0])
     if  n-X.shape[0]>0:
         padd = np.empty((n-X.shape[0], X.shape[1]))
         padd[:] = np.nan
         res = np.concatenate((padd, X))
     else:
         res = X
-    #print(res)
-    return res
+    return res[:,lk+1]
 
 #print(mls(np.arange(1,17), 0, 8, 2))
 
