@@ -1,65 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+from intrinsic_event_calc import price_intrinsic_event, intrinsic_index_calc
+from data_transformation import daily_to_monthly_rr
 
-def intrinsic_event(ts, d_up, d_down, mode='up'):
-    result = []
-    s_ext = None
-    s_ie = None
-    first_tick = True
-    for i in range(len(ts)):
-        s_tick = ts[i]
-        if i==52:
-            print(mode, s_tick, s_ext, s_ie)
-        if first_tick:
-            s_ext = s_tick
-            s_ie = s_tick
-            first_tick = False
-            result.append(0)
-            continue
-        elif mode == 'up':
-            if s_tick - s_ext >= d_up:
-                mode = 'down'
-                s_ext = s_tick
-                s_ie = s_tick
-                result.append(1)
-                continue
-            elif s_tick < s_ext:
-                s_ext = s_tick
-                if s_ie - s_ext >= d_down:
-                    s_ie = s_tick
-                    result.append(-2)
-                    continue
-                else:
-                    result.append(0)
-                    continue
-            else:
-                result.append(0)
-                continue
-        elif mode == 'down':
-            if s_ext - s_tick >= d_down:
-                mode = 'up'
-                s_ext = s_tick
-                s_ie = s_tick
-                result.append(-1)
-                continue
-            elif s_tick > s_ext:
-                s_ext = s_tick
-                if s_ext - s_ie >= d_up:
-                    s_ie = s_tick
-                    result.append(2)
-                    continue
-                else:
-                    result.append(0)
-                    continue
-            else:
-                result.append(0)
-                continue
-        else:
-            print(i)
-            print('SOMETHING IS WRONG 1')
-            exit(1)
-    return np.array(result)
 
 # Data is downloaded from https://realized.oxford-man.ox.ac.uk/data/download
 data = pd.read_csv('oxford_data/realized_volatility_mod.csv', sep=';')
@@ -69,23 +12,25 @@ df = df.rename(columns={"DateID": 'Date',
                    'Number of Transactions': 'Transaction_nb',
                    'Closing Price': 'Price'})
 df = df.dropna(subset = ['Price']).reset_index(drop=True)
-df['Int_event'] = intrinsic_event(df['Price'], d_up=40, d_down=40, mode='up')
+df['Int_event'] = price_intrinsic_event(df['Price'], d_up=40, d_down=40, mode='up')
 # Set a new Intrinsic time index
-cur_index = 0
-df['Int_index'] = None
-for i in range(len(df)):
-    if df['Int_event'][i] in [-1, 1, -2, 2]:
-        cur_index = cur_index + 1
-        df['Int_index'].iloc[i] = cur_index
+df = intrinsic_index_calc(df)
 # Transformation of time index
 df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d', errors='ignore')
+# Low frequency dataframe
+df_lf = daily_to_monthly_rr(df)
+print(df_lf.head())
+
 print(df.iloc[:43])
 # Data visualisation
-plt.plot(df.index[:300], df.Price[:300])
+plt.plot(df.index[:300], df.Price[:300], label='Original time series')
 plt.plot(df[(df.Int_event==1) | (df.Int_event==-1)].loc[:300].index,
-         df[(df.Int_event==1) | (df.Int_event==-1)].loc[:300].Price, 'o')
+         df[(df.Int_event==1) | (df.Int_event==-1)].loc[:300].Price, 'o', label='Directional change events')
 plt.plot(df[(df.Int_event==2) | (df.Int_event==-2)].loc[:300].index,
-         df[(df.Int_event==2) | (df.Int_event==-2)].loc[:300].Price, marker='v', linestyle='--')
+         df[(df.Int_event==2) | (df.Int_event==-2)].loc[:300].Price, marker='v', linestyle='--', label='Overshooot intrinsic events')
+plt.ylabel('Price')
+plt.xlabel('Time index')
+plt.legend()
 plt.show()
 
 
