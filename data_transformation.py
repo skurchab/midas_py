@@ -34,7 +34,7 @@ def daily_to_monthly_rr(df: pd.DataFrame):
                     pt_1 = df[(df.Date.dt.year==year)&
                               (df.Date.dt.month==month)&
                               (df.Date.dt.day==max_date_1)].Price.values[0]
-                    variance.append(np.std(df[df.Date.between('{}-{}-{}'.format(years[-1], max_month, max_date),
+                    variance.append(np.var(df[df.Date.between('{}-{}-{}'.format(years[-1], max_month, max_date),
                                                               '{}-{}-{}'.format(year, month, max_date_1))].Return))
                     #print(df[df.Date.between('{}-{}-{}'.format(years[-1], max_month, max_date), '{}-{}-{}'.format(year, month, max_date_1))])
                     returns.append((pt_1/pt - 1))
@@ -54,7 +54,7 @@ def daily_to_monthly_rr(df: pd.DataFrame):
                           (df.Date.dt.month == month) &
                           (df.Date.dt.day == max_date_1)].Price.values[0]
                 returns.append((pt_1 / pt - 1))
-                variance.append(np.std(df[df.Date.between('{}-{}-{}'.format(year, month-1, max_date), '{}-{}-{}'.format(year, month, max_date_1))].Return))
+                variance.append(np.var(df[df.Date.between('{}-{}-{}'.format(year, month-1, max_date), '{}-{}-{}'.format(year, month, max_date_1))].Return))
 
 
             dates.append('{}{}'.format(year, month))
